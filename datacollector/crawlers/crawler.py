@@ -1,5 +1,4 @@
-"""A crawler that crawls a website.
-"""
+"""A crawler that crawls (okay, and scrapes) the web."""
 
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -7,9 +6,9 @@ from typing import Callable, Dict, List, Optional, Pattern, Tuple
 from urllib.parse import urljoin, urlparse
 import asyncio
 import json
+import re
 import posixpath
 
-from loguru import logger as log
 import httpx
 from parsel import Selector
 from pydantic import BaseModel, Field, validator
@@ -17,6 +16,8 @@ from tldextract import tldextract
 from w3lib.url import canonicalize_url
 from trafilatura import extract
 from datasets import Dataset
+from rich.progress import Progress
+from rich.console import Console
 
 from random_user_agent.user_agent import UserAgent
 from random_user_agent.params import SoftwareName, OperatingSystem
@@ -231,11 +232,16 @@ class HttpxCrawler(AbstractCrawler):
         callbacks: Optional[Dict[str, Callable]] = None,
         delay: float = 0.3,
         output_path: str = "output",
+        robots_txt: bool = True,
     ) -> None:
         self.url_filter = url_filter
         self.callbacks = callbacks or {}
         self.delay = delay
         self.saver = JsonlSaver(output_path)
+        self.robots_txt = robots_txt
+        self.robots_rules = {}
+
+        self.console = Console()
 
         software_names = [SoftwareName.CHROME.value, SoftwareName.FIREFOX.value]
         operating_systems = [OperatingSystem.WINDOWS.value, OperatingSystem.LINUX.value]
@@ -246,7 +252,7 @@ class HttpxCrawler(AbstractCrawler):
         )
 
     @staticmethod
-    def _get_headers(user_agent_rotator: UserAgent) -> str:
+    def _get_headers(user_agent_rotator: UserAgent) -> Dict[str, str]:
         return {
             "user-agent": user_agent_rotator.get_random_user_agent(),
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
@@ -258,18 +264,71 @@ class HttpxCrawler(AbstractCrawler):
         self.session = await httpx.AsyncClient(
             timeout=httpx.Timeout(60.0),
             limits=httpx.Limits(max_connections=5),
-            headers=self._get_headers(self.user_agent_rotator),
         ).__aenter__()
         return self
 
     async def __aexit__(self, *args, **kwargs):
         await self.session.__aexit__(*args, **kwargs)
 
+    def parse_robots_txt(self, content: str) -> Dict[str, List[str]]:
+        user_agent = "*"
+        rules = {}
+        for line in content.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            key, value = re.split(r":\s*", line, maxsplit=1)
+            key = key.lower()
+            if key == "user-agent":
+                user_agent = value
+            elif key == "disallow":
+                if user_agent not in rules:
+                    rules[user_agent] = []
+                rules[user_agent].append(value)
+        return rules
+
+    async def fetch_robots_txt(self, url: str) -> Dict[str, List[str]]:
+        domain = urlparse(url).netloc
+        if domain not in self.robots_rules:
+            robots_url = urljoin(url, "/robots.txt")
+            try:
+                response = await self.session.get(robots_url)
+                if response.status_code == 200:
+                    content = response.text
+                    self.robots_rules[domain] = self.parse_robots_txt(content)
+            except Exception:
+                pass
+            if domain not in self.robots_rules:
+                self.robots_rules[domain] = {}
+        return self.robots_rules[domain]
+
+    def is_allowed(self, url: str, rules: Dict[str, List[str]]) -> bool:
+        if not rules:
+            return True
+        user_agent = self.user_agent_rotator.get_random_user_agent()
+        user_agents = [user_agent, "*"]
+        for ua in user_agents:
+            if ua in rules:
+                for rule in rules[ua]:
+                    if re.match(rule, urlparse(url).path):
+                        return False
+        return True
+
     async def scrape(self, urls: List[str]) -> List[httpx.Response]:
         async def _scrape(url):
             headers = self._get_headers(self.user_agent_rotator)
             await asyncio.sleep(self.delay)  # be nice
-            return await self.session.get(url, headers=headers, follow_redirects=True)
+            domain = urlparse(url).netloc
+
+            if self.robots_txt and domain not in self.robots_rules:
+                await self.fetch_robots_txt(url)
+
+            if not self.robots_txt or self.is_allowed(url, self.robots_rules[domain]):
+                return await self.session.get(
+                    url, headers=headers, follow_redirects=True
+                )
+            else:
+                return None
 
         tasks = [_scrape(url) for url in urls]
         return await asyncio.gather(*tasks, return_exceptions=True)
@@ -278,11 +337,22 @@ class HttpxCrawler(AbstractCrawler):
         """Crawl target to maximum depth or until no more urls are found"""
         url_pool = start_urls
         depth = 0
-        while url_pool and depth <= max_depth:
-            responses = await self.scrape(url_pool)
-            url_pool = self.parse(responses)
-            await self.callback(responses)
-            depth += 1
+
+        with Progress(console=self.console) as progress:
+            task_id = progress.add_task("[cyan]Crawling...", total=max_depth)
+
+            while url_pool and depth <= max_depth:
+                responses = await self.scrape(url_pool)
+                responses = [
+                    response
+                    for response in responses
+                    if response is not None and not isinstance(response, Exception)
+                ]
+                progress.update(task_id, advance=1, description=f"[cyan]Depth {depth}")
+
+                url_pool = self.parse(responses)
+                await self.callback(responses)
+                depth += 1
 
         self.saver.flush()
 
@@ -300,6 +370,7 @@ class HttpxCrawler(AbstractCrawler):
         return self.url_filter.filter(all_uniques)
 
     async def callback(self, responses):
+        saved_pages = 0
         for response in responses:
             for pattern, fn in self.callbacks.items():
                 if pattern.match(str(response.url)):
@@ -308,9 +379,14 @@ class HttpxCrawler(AbstractCrawler):
                 json_response = json.loads(extract(response.text, output_format="json"))
                 if json_response:
                     self.saver.add_result(json_response)
-            except Exception:
-                log.exception(f"Error parsing response: {response.url}")
+                    saved_pages += 1
+            except Exception as e:
+                self.console.log(
+                    f"[red]Error parsing response: {response.url} - {str(e)}"
+                )
                 continue
+
+        self.console.log(f"[green]Saved pages: {saved_pages}")
 
 
 class CrawlerArgs(BaseModel):
@@ -323,6 +399,7 @@ class CrawlerArgs(BaseModel):
     push_to_hub: bool = Field(False, title="Push to HuggingFace Hub")
     username: Optional[str] = Field(None, title="HuggingFace username")
     folder: Optional[str] = Field(None, title="HuggingFace folder")
+    robot_txt: bool = Field(False, title="Respect robots.txt")
 
     @validator("start_urls", pre=True)
     def validate_start_urls(cls, v):
@@ -344,6 +421,7 @@ class CrawlerArgs(BaseModel):
                 "push_to_hub": False,
                 "username": None,
                 "folder": None,
+                "robot_txt": False,
             }
         }
 
@@ -363,6 +441,7 @@ class Crawler(BaseModel):
             callbacks=callbacks,
             delay=self.args.delay,
             output_path=self.args.output_path,
+            robot_txt=self.args.robot_txt,
         ) as crawler:
             await crawler.run(self.args.start_urls, max_depth=self.args.max_depth)
 
