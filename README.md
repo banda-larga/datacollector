@@ -1,4 +1,4 @@
-# DataCollector: create datasets from unstructured sources using LLMs
+# DataCollector: create datasets from unstructured sources using LLMs (WIP)
 
 `Main Idea: A Langchain for data collection.`
 
