@@ -18,6 +18,7 @@ from datacollector import Task, CollectorArgs, Collector
 config = CollectorArgs(
     task=Task.SUMMARIZATION,
     dataset="xsum",
+    model="gpt-3.5-turbo-0613"
     language="it",
     max_items=1000,
     batch_size=10,
