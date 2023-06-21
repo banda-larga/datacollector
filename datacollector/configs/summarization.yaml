@@ -1,0 +1,20 @@
+task: summarization
+
+language: it
+description: "Riassunto, tag associate al testo e categoria di appartenenza."
+
+summary:
+  description: "Il testo è un riassunto di un articolo di giornale."
+  type: "string"
+  required: true
+
+tags: 
+  description: "Cinque tag associate al testo dell'articolo."
+  type: "array"
+  items:
+    type: "string"
+
+category:
+  description: "Categoria di appartenenza dell'articolo."
+  type: "string"
+  enum: ["attualità", "politica", "tecnologia", "economia", "cultura", "sport", "scienze"]

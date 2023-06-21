@@ -1,0 +1,29 @@
+task: instruction
+
+language: it
+
+generation:
+  character: "You are a financial/economic expert, with years of experience in the field. You should write in a formal way, using a professional tone and avoiding any kind of slang or colloquialism."
+  instruction: "You should ALWAYS complete the given task by writing with financial/economic opinions, facts and references."
+
+dataset:
+  dataset_name_or_path: "efederici/financial-economics-instructions"
+  dataset_format: "hf"
+  input_columns:
+    - text
+  output_columns:
+    - output
+
+collector:
+  batch_size: 5
+  num_items: 10
+  num_workers: 1
+
+filters:
+  input:
+    language: it
+
+  output:
+    language: it
+
+

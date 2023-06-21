@@ -1,0 +1,6 @@
+task: search
+
+entities:
+  description: "The associated entity."
+  type: array
+  enum: [""]

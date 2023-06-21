@@ -1,0 +1,34 @@
+task: ner
+
+language: it
+description: "The task is to extract named entities from the given text."
+
+named_entities:
+  description: "The named entities found in the text."
+  text:
+    description: "The text of the named entity."
+  label:
+    description: "The medical label of the named entity."
+    type: string
+    enum: ["DRUG", "DISEASE", "SYMPTOM", "TREATMENT", "TEST", "PROBLEM", "BODY_PART", "CAUSE", "OCCURRENCE", "FREQUENCY", "DOSAGE", "SIDE_EFFECT", "INTERACTION", "CONTRAINDICATION"]
+
+dataset:
+  dataset_name_or_path: "data/ner/ner_example.json"
+  dataset_format: "json"
+  input_columns:
+    - text
+  output_columns:
+    - named_entities
+
+collector:
+  batch_size: 5
+  num_items: 100
+  num_workers: 4
+
+  input_filter:
+    min_text_length: 100
+    language: it
+
+  output_filter:
+    min_num_entities: 3
+    max_num_entities: 10

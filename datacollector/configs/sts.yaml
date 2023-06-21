@@ -1,0 +1,3 @@
+task: sentence_similarity
+
+range: [0, 1, 2, 3, 4, 5]

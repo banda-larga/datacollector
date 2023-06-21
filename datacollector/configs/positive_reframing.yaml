@@ -1,0 +1,46 @@
+task: positive_reframing
+
+language: it
+
+model:
+  chat: true
+  openai: true
+  name: "gpt-3.5-turbo-0613"
+
+reframed:
+  description: "A positive outlook for a negative situation."
+  type: "string"
+
+strategy:
+  description: "a strategy to carry out reframing."
+  type: "string"
+  enum: ["ottimismo", "speranza", "gratitudine", "neutralizzazione"]
+
+dataset:
+  dataset_name_or_path: "data/pr/pr_example.json"
+  dataset_format: "json"
+  input_columns:
+    - text
+  output_columns:
+    - reframed
+    - strategy
+
+collector:
+  batch_size: 5
+  num_items: 100
+  num_workers: 4
+
+filters:
+  input:
+    tokenized: true
+    min_text_length: 100
+    max_text_length: 500
+    truncate: true
+    language: it
+
+  output:
+    min_num_entities: 3
+    max_num_entities: 10
+
+  
+

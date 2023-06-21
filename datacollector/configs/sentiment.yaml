@@ -1,0 +1,6 @@
+task: sentiment
+
+category:
+  description: "Categoria di appartenenza del testo."
+  type: "string"
+  enum: ["neutrale", "felice", "triste"]

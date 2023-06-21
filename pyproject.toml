@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "datacollector"
+version = "0.1.0"
+description = ""
+authors = ["banda-larga <edoardofedericik@virgilio.it>", "Gabriele Destro <gabriele.destro@gmail.com>"]
+readme = "README.md"
+packages = [{include = "datacollector"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
