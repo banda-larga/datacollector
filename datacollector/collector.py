@@ -1,80 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Any, Union, List, Callable, Optional
+from typing import Any, Union, List
 from pathlib import Path
 
-from models import OutputParser, Task
+from task import Task
 from datasets import load_dataset
-from utils import generate_batch, generate
+from utils import generate
 from pydantic import BaseModel, Field, validator
-from functions import load_functions
 from datasets import Dataset
 from templates.chat import ChatPromptTemplate
 import os
-
-
-class Task(BaseModel):
-    """A task definition. It contains all the information needed to run a task."""
-
-    _default_tasks = {
-        "generation",
-        "ner",
-        "sentiment",
-        "sts",
-        "tagging",
-        "classification",
-    }
-
-    name: str = Field(..., description="Task name.", example="summarization")
-    type: str = Field(..., description="Task type.", example="generation")
-
-    system: str = Field(None, description="Task role.", example="You are a {role}.")
-    language: str = Field(None, description="Task language.", example="en")
-
-    prompt: str = Field(
-        "{text}",
-        description="Task description.",
-        example="Summarize the following text:\n{text}",
-    )
-
-    inputs: List[str] = Field(
-        ..., description="Input columns.", example=["text", "role"]
-    )
-    outputs: List[str] = Field(
-        ..., description="Task output columns.", example=["summary"]
-    )
-    output_parser: OutputParser = Field(
-        ..., description="Output parser.", example="summary"
-    )
-
-    labels: Optional[List[str]] = Field(
-        None, description="Task labels.", example=["positive", "negative"]
-    )
-
-    special_tokens: Optional[List[str]] = Field(
-        None, description="Special tokens.", example=["<|endoftext|>"]
-    )
-
-    @validator("type")
-    def name_must_supported(cls, v):
-        if v not in cls._default_tasks:
-            raise ValueError(
-                "Task type must be one of: generation, ner, sentiment, sts, tagging, classification"
-            )
-        return v
-
-    @validator("role")
-    def role_only_for_generation(cls, v, values):
-        if values.get("type") != "generation":
-            raise ValueError("Task role is only supported for generation tasks")
-        return v
-
-    def require_functions(self) -> bool:
-        return self.type != "generation"
-
-    @classmethod
-    def load_functions(cls, task: "Task") -> List[Callable]:
-        """Load functions for a task"""
-        return load_functions(task=task)
 
 
 class CollectorArgs(BaseModel):
@@ -192,7 +126,14 @@ class Collector(AbstractDataPipeline, BaseModel):
         self.args = args
 
         if self.args.task.require_functions():
-            self.args.task.load_functions()
+            if not self.args.task.fn:
+                raise ValueError(
+                    "You need to provide a function for this task, see the `fn` argument"
+                )
+
+            self.function = self.args.task.load_functions()
+        else:
+            self.function = None
 
         dataset = DatasetLoader.load(dataset)
         self.dataset = DatasetLoader.prepare(dataset, self.args)
@@ -207,7 +148,6 @@ class Collector(AbstractDataPipeline, BaseModel):
 
         self.input_columns = input_columns
         self.output_columns = output_columns
-        self.function = args.task.functions
 
         if self.args.push_to_hub and not os.environ.get("HUGGINGFACE_TOKEN"):
             raise ValueError(
@@ -261,7 +201,7 @@ class Collector(AbstractDataPipeline, BaseModel):
                 private=kwargs.get("private", False),
             )
 
-    def generate(self, examples, indices=None, batched=False, **kwargs):
+    def generate(self, examples, indices=None, **kwargs):
         results = generate(examples, self.function, **kwargs)
 
         if self.args.save_every and indices:

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, validator
 from collector import Task
 
 
-class TagsFunctions(BaseModel):
+class Tag(BaseModel):
     """Tags function implementation to use in data_collector."""
 
     name: str = Field(

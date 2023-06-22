@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, validator
 from collector import Task
 
 
-class STSFunctions(BaseModel):
+class STS(BaseModel):
     """Sentence Similarity implementation to use in data_collector."""
 
     name: str = Field(
@@ -34,9 +34,7 @@ class STSFunctions(BaseModel):
         """Create STSFunctions from a config."""
         return cls(
             name=config.get("name", "print_similarity"),
-            description=config.get(
-                "description", "A function that prints the semantic similarity."
-            ),
+            description=config.get("description", "Prints the semantic similarity."),
             sentiment_description=config.get(
                 "sentiment_description",
                 "The semantic similarity.",

@@ -1,32 +1,44 @@
-from data_collector.models import Task
-from omegaconf import OmegaConf
+from abc import ABC, abstractmethod
+from typing import Dict, List, Any, Callable
+
+
+class Function(ABC):
+    @classmethod
+    @abstractmethod
+    def from_task_config(cls, config: Callable) -> function:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_schema(cls, config: function) -> List[Dict[str, Any]]:
+        pass
 
 
 def load_functions(task: Task):
     type = task.type
     if type == "sentiment":
-        from functions.sentiment import SentimentFunctions
+        from functions.sentiment import Sentiment
 
-        sentiment_functions = SentimentFunctions.from_task_config(task)
-        schema = SentimentFunctions.get_schema(sentiment_functions)
+        sentiment_functions = Sentiment.from_task_config(task)
+        schema = Sentiment.get_schema(sentiment_functions)
 
     elif type == "ner":
-        from functions.ner import NERFunctions
+        from functions.ner import NER
 
-        ner_functions = NERFunctions.from_task_config(task)
-        schema = NERFunctions.get_schema(ner_functions)
+        ner_functions = NER.from_task_config(task)
+        schema = NER.get_schema(ner_functions)
 
     elif type == "tagging":
-        from functions.topic_tagging import TagsFunctions
+        from functions.topic_tagging import Tag
 
-        tags_functions = TagsFunctions.from_task_config(task)
-        schema = TagsFunctions.get_schema(tags_functions)
+        tags_functions = Tag.from_task_config(task)
+        schema = Tag.get_schema(tags_functions)
 
     elif type == "sts":
-        from functions.sts import STSFunctions
+        from functions.sts import STS
 
-        sts_functions = STSFunctions.from_task_config(task)
-        schema = STSFunctions.get_schema(sts_functions)
+        sts_functions = STS.from_task_config(task)
+        schema = STS.get_schema(sts_functions)
 
     else:
         raise ValueError(f"Unsupported task: {type}")

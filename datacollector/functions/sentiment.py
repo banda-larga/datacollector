@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, validator
 from collector import Task
 
 
-class SentimentFunctions(BaseModel):
+class Sentiment(BaseModel):
     """Sentiment function implementation to use in data_collector."""
 
     name: str = Field(

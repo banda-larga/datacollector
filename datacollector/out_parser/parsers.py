@@ -1,15 +1,5 @@
 from typing import Dict, List
-from abc import ABC, abstractmethod
-
-
-class OutputParser(ABC):
-    @abstractmethod
-    def parse(self, output: Dict) -> Dict:
-        pass
-
-    @abstractmethod
-    def parse_batch(self, output: List[Dict]) -> Dict:
-        pass
+from out_parser.parser import OutputParser
 
 
 class NERParser(OutputParser):
