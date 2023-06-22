@@ -1,8 +1,8 @@
-from data_collector.models import TaskType
+from data_collector.models import Task
 from omegaconf import OmegaConf
 
 
-def load_functions(task: TaskType, config: OmegaConf):
+def load_functions(task: Task, config: OmegaConf):
     if task == "sentiment":
         from functions.sentiment import SentimentFunctions
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 from pydantic import BaseModel, Field, validator
+from string import Template
 
 _LANGUAGE_TO_TEMPLATE = {
     "en": "English",
@@ -52,25 +53,23 @@ class ChatPromptTemplate(BaseModel):
             )
         return language
 
-    @classmethod
     def get_messages(
-        cls,
-        system_message: Optional[str] = None,
-        user_message: str = "{text}",
-        language: Optional[str] = None,
+        self,
         **kwargs,
     ) -> List[Message]:
         messages = []
 
-        if system_message is not None:
-            if language is not None:
-                system_message += (
-                    f" You should ALWAYS write in {_LANGUAGE_TO_TEMPLATE[language]}."
-                )
+        if self.system_message is not None:
+            system_template = Template(self.system_message)
+            if self.language is not None:
+                system_message += f" You should ALWAYS write in {_LANGUAGE_TO_TEMPLATE[self.language]}."
             messages.append(
-                Message(role="system", content=system_message.format(**kwargs))
+                Message(role="system", content=system_template.substitute(**kwargs))
             )
 
-        messages.append(Message(role="user", content=user_message.format(**kwargs)))
-
+        user_template = Template(self.user_message)
+        messages.append(
+            Message(role="user", content=user_template.substitute(**kwargs))
+        )
+        messages = [message.dict() for message in messages]
         return messages

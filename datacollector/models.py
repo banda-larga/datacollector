@@ -9,9 +9,10 @@ class OutputParser(ABC):
         pass
 
 
-class TaskType(str, Enum):
+class Task(str, Enum):
     ner = "ner"
     sentiment = "sentiment"
-    summarization = "summarization"
     sts = "sts"
-    neutralization = "neutralization"
+    paraphrase = "paraphrase"
+    translation = "translation"
+    generation = "generation"

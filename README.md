@@ -24,9 +24,9 @@ config = CollectorArgs(
     max_items=1000,
     batch_size=10,
     num_proc=4,
+    output_dir="output",
+    save_every=100,
     push_to_hub=True,
-    username="username",
-    repo="repo",
 )
 
 collector = Collector(config)
