@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-@backoff.on_exception(backoff.expo, openai.error.TooManyRequestsError, max_time=60)
+@backoff.on_exception(backoff.expo, openai.error.RateLimitError, max_time=60)
 def generate_single(
     messages: List[Dict[str, str]],
     functions=None,

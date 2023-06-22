@@ -4,16 +4,15 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 from pydantic import BaseModel, Field, validator
-from collector import Task
-from functions import Function
 
 
-class Ner(BaseModel, Function):
+class Ner(BaseModel):
     """Ner function implementation to use in data_collector."""
 
     name: str = Field(
         description="Name of the function.",
         example="named_entity_recognition",
+        default="named_entity_recognition",
     )
     description: str = Field(
         description="Description of the function.",
@@ -39,48 +38,11 @@ class Ner(BaseModel, Function):
         return v
 
     @classmethod
-    def from_task_config(cls, config: Task) -> NerFunctions:
-        """Create NerFunctions from a config."""
-        return cls(
-            name=config.get("name", "named_entity_recognition"),
-            description=config.get(
-                "description", "A named entity recognition function."
-            ),
-            named_entities_description=config.get(
-                "named_entities_description",
-                "List of named entities.",
-            ),
-            labels=config.get(
-                "labels",
-                [
-                    "PERSON",
-                    "NORP",
-                    "FAC",
-                    "ORG",
-                    "GPE",
-                    "LOC",
-                    "PRODUCT",
-                    "EVENT",
-                    "WORK_OF_ART",
-                    "LAW",
-                    "LANGUAGE",
-                    "DATE",
-                    "TIME",
-                    "PERCENT",
-                    "MONEY",
-                    "QUANTITY",
-                    "ORDINAL",
-                    "CARDINAL",
-                ],
-            ),
-        )
-
-    @classmethod
-    def get_schema(cls, config: NerFunctions) -> List[Dict[str, Any]]:
+    def get_schema(cls, config: Ner) -> List[Dict[str, Any]]:
         """Get schema of the function."""
         return [
             {
-                "name": "named_entity_recognition",
+                "name": config.name,
                 "description": config.description,
                 "parameters": {
                     "type": "object",

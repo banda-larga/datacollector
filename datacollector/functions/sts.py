@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 from pydantic import BaseModel, Field, validator
-from collector import Task
 
 
 class STS(BaseModel):
@@ -29,24 +28,24 @@ class STS(BaseModel):
             raise ValueError("name must be print_similarity")
         return v
 
-    @classmethod
-    def from_task_config(cls, config: Task) -> STSFunctions:
-        """Create STSFunctions from a config."""
-        return cls(
-            name=config.get("name", "print_similarity"),
-            description=config.get("description", "Prints the semantic similarity."),
-            sentiment_description=config.get(
-                "sentiment_description",
-                "The semantic similarity.",
-            ),
-            labels=config.get(
-                "values",
-                [0, 1, 2, 3, 4],
-            ),
-        )
+    # @classmethod
+    # def from_task_config(cls, config: Task) -> STSFunctions:
+    #     """Create STSFunctions from a config."""
+    #     return cls(
+    #         name=config.get("name", "print_similarity"),
+    #         description=config.get("description", "Prints the semantic similarity."),
+    #         sentiment_description=config.get(
+    #             "sentiment_description",
+    #             "The semantic similarity.",
+    #         ),
+    #         labels=config.get(
+    #             "values",
+    #             [0, 1, 2, 3, 4],
+    #         ),
+    #     )
 
     @classmethod
-    def get_schema(cls, config: STSFunctions) -> List[Dict[str, Any]]:
+    def get_schema(cls, config: STS) -> List[Dict[str, Any]]:
         """Get schema of the function."""
         return [
             {

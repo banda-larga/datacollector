@@ -5,42 +5,42 @@ from typing import Dict, List, Any, Callable
 class Function(ABC):
     @classmethod
     @abstractmethod
-    def from_task_config(cls, config: Callable) -> function:
+    def from_task_config(cls, config: Callable):
         pass
 
     @classmethod
     @abstractmethod
-    def get_schema(cls, config: function) -> List[Dict[str, Any]]:
+    def get_schema(cls, config) -> List[Dict[str, Any]]:
         pass
 
 
-def load_functions(task: Task):
-    type = task.type
-    if type == "sentiment":
-        from functions.sentiment import Sentiment
+# def load_functions(task: Task):
+#     type = task.type
+#     if type == "sentiment":
+#         from functions.sentiment import Sentiment
 
-        sentiment_functions = Sentiment.from_task_config(task)
-        schema = Sentiment.get_schema(sentiment_functions)
+#         sentiment_functions = Sentiment.from_task_config(task)
+#         schema = Sentiment.get_schema(sentiment_functions)
 
-    elif type == "ner":
-        from functions.ner import NER
+#     elif type == "ner":
+#         from functions.ner import NER
 
-        ner_functions = NER.from_task_config(task)
-        schema = NER.get_schema(ner_functions)
+#         ner_functions = NER.from_task_config(task)
+#         schema = NER.get_schema(ner_functions)
 
-    elif type == "tagging":
-        from functions.topic_tagging import Tag
+#     elif type == "tagging":
+#         from functions.topic_tagging import Tag
 
-        tags_functions = Tag.from_task_config(task)
-        schema = Tag.get_schema(tags_functions)
+#         tags_functions = Tag.from_task_config(task)
+#         schema = Tag.get_schema(tags_functions)
 
-    elif type == "sts":
-        from functions.sts import STS
+#     elif type == "sts":
+#         from functions.sts import STS
 
-        sts_functions = STS.from_task_config(task)
-        schema = STS.get_schema(sts_functions)
+#         sts_functions = STS.from_task_config(task)
+#         schema = STS.get_schema(sts_functions)
 
-    else:
-        raise ValueError(f"Unsupported task: {type}")
+#     else:
+#         raise ValueError(f"Unsupported task: {type}")
 
-    return schema
+#     return schema

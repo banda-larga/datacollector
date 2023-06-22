@@ -12,10 +12,10 @@ import os
 
 
 class CollectorArgs(BaseModel):
-    task: Task = Field(..., description="Task arguments.", example=Task())
-    dataset: str = Field(..., description="Dataset name.", example="xsum")
-    model: str = Field(..., description="Model name.", example="gpt-3.5-turbo-0613")
-    language: str = Field(..., description="Language code.", example="it")
+    task: Task = Field(None, description="Task arguments.", example=Task())
+    dataset: str = Field(None, description="Dataset name.", example="xsum")
+    model: str = Field(None, description="Model name.", example="gpt-3.5-turbo-0613")
+    language: str = Field(None, description="Language code.", example="it")
     max_items: int = Field(1000, description="Maximum number of items.", example=1000)
     batch_size: int = Field(10, description="Batch size.", example=10)
     output_dir: str = Field(
@@ -51,14 +51,13 @@ class DatasetLoader:
         cls,
         dataset: Union[str, Path],
         split: str = "train",
-        streaming: bool = False,
         **kwargs,
     ):
         if dataset is None:
             raise ValueError("No dataset provided")
 
         if isinstance(dataset, str) and not os.path.exists(dataset):
-            return load_dataset(dataset, split=split, streaming=streaming, **kwargs)
+            return load_dataset(dataset, split=split, **kwargs)
 
         dataset_path = Path(dataset)
         if not dataset_path.exists():
@@ -94,7 +93,7 @@ class DatasetLoader:
         args: CollectorArgs,
     ) -> Dataset:
 
-        language = None if args.task.require_functions() else args.task.language
+        language = None if args.task.function else args.task.language
 
         template = ChatPromptTemplate(
             prompt=args.task.prompt,
@@ -110,13 +109,7 @@ class DatasetLoader:
         )
 
 
-class AbstractDataPipeline(ABC):
-    @abstractmethod
-    def build(self, **kwargs: Any) -> None:
-        pass
-
-
-class Collector(AbstractDataPipeline, BaseModel):
+class Collector(BaseModel):
     def __init__(
         self,
         dataset: Union[str, Path],
@@ -125,12 +118,7 @@ class Collector(AbstractDataPipeline, BaseModel):
     ):
         self.args = args
 
-        if self.args.task.require_functions():
-            if not self.args.task.fn:
-                raise ValueError(
-                    "You need to provide a function for this task, see the `fn` argument"
-                )
-
+        if self.args.task.function:
             self.function = self.args.task.load_functions()
         else:
             self.function = None

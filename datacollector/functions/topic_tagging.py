@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, validator
-from collector import Task
 
 
 class Tag(BaseModel):
@@ -43,24 +42,24 @@ class Tag(BaseModel):
             raise ValueError("name must be get_tags")
         return v
 
-    @classmethod
-    def from_task_config(cls, config: Task) -> TagsFunctions:
-        """Create TagsFunctions from a config."""
-        return cls(
-            name=config.get("name", "get_tags"),
-            description=config.get(
-                "description",
-                "A function that returns the tags associated with the given text.",
-            ),
-            tags_description=config.get(
-                "tags_description",
-                "List of tags.",
-            ),
-            labels=config.get("labels"),
-        )
+    # @classmethod
+    # def from_task_config(cls, config: Task) -> TagsFunctions:
+    #     """Create TagsFunctions from a config."""
+    #     return cls(
+    #         name=config.get("name", "get_tags"),
+    #         description=config.get(
+    #             "description",
+    #             "A function that returns the tags associated with the given text.",
+    #         ),
+    #         tags_description=config.get(
+    #             "tags_description",
+    #             "List of tags.",
+    #         ),
+    #         labels=config.get("labels"),
+    #     )
 
     @classmethod
-    def get_schema(cls, config: TagsFunctions) -> List[Dict[str, Any]]:
+    def get_schema(cls, config: Tags) -> List[Dict[str, Any]]:
         """Get schema of the function."""
         return [
             {
