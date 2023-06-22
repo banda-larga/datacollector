@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, validator
+from collector import Task
 
 
 class TagsFunctions(BaseModel):
@@ -43,7 +44,7 @@ class TagsFunctions(BaseModel):
         return v
 
     @classmethod
-    def from_config(cls, config: Dict[str, Any]) -> TagsFunctions:
+    def from_task_config(cls, config: Task) -> TagsFunctions:
         """Create TagsFunctions from a config."""
         return cls(
             name=config.get("name", "get_tags"),
@@ -76,7 +77,7 @@ class TagsFunctions(BaseModel):
                             },
                         },
                     },
-                    "required": ["sentiment"],
+                    "required": ["tags"],
                 },
             }
         ]

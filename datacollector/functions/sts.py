@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 from pydantic import BaseModel, Field, validator
+from collector import Task
 
 
 class STSFunctions(BaseModel):
@@ -29,7 +30,7 @@ class STSFunctions(BaseModel):
         return v
 
     @classmethod
-    def from_config(cls, config: Dict[str, Any]) -> STSFunctions:
+    def from_task_config(cls, config: Task) -> STSFunctions:
         """Create STSFunctions from a config."""
         return cls(
             name=config.get("name", "print_similarity"),

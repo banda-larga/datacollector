@@ -1,19 +1,18 @@
 import openai
 import backoff
-from typing import List, Optional, Dict
 import json
+from typing import List, Optional, Dict, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 @backoff.on_exception(backoff.expo, openai.error.TooManyRequestsError, max_time=60)
-def generate(
+def generate_single(
     messages: List[Dict[str, str]],
     functions=None,
     function_call: str = "auto",
     model: Optional[str] = "gpt-3.5-turbo-0613",
 ) -> Dict:
     """Generate a single response from the OpenAI API."""
-
     try:
         response = openai.ChatCompletion.create(
             model=model,
@@ -38,7 +37,7 @@ def generate(
 
 
 def generate_batch(
-    messages: List[Dict[str, str]],
+    messages_list: List[List[Dict[str, str]]],
     functions=None,
     batch_size: int = 10,
 ) -> List[Dict]:
@@ -46,7 +45,8 @@ def generate_batch(
 
     with ThreadPoolExecutor(max_workers=batch_size) as executor:
         futures = [
-            executor.submit(generate, message, functions) for message in messages
+            executor.submit(generate_single, messages, functions)
+            for messages in messages_list
         ]
 
         for future in as_completed(futures):
@@ -58,3 +58,15 @@ def generate_batch(
                 results.append({})
 
     return results
+
+
+def generate(
+    examples: Union[List[Dict[str, str]], List[List[Dict[str, str]]]],
+    functions=None,
+    batched: bool = False,
+    **kwargs,
+) -> Union[Dict, List[Dict]]:
+    if batched:
+        return generate_batch(examples, functions, kwargs.get("batch_size", 10))
+    else:
+        return generate_single(examples, functions)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 from pydantic import BaseModel, Field, validator
+from collector import Task
 
 
 class NerFunctions(BaseModel):
@@ -37,7 +38,7 @@ class NerFunctions(BaseModel):
         return v
 
     @classmethod
-    def from_config(cls, config: Dict[str, Any]) -> NerFunctions:
+    def from_task_config(cls, config: Task) -> NerFunctions:
         """Create NerFunctions from a config."""
         return cls(
             name=config.get("name", "named_entity_recognition"),
