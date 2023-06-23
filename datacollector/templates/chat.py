@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import List, Optional
 from pydantic import BaseModel, Field, validator
-from string import Template
 
 _LANGUAGE_TO_TEMPLATE = {
     "en": "English",
@@ -40,17 +39,16 @@ class ChatPromptTemplate(BaseModel):
         description="Human message template.",
         example="{text}",
     )
+
     language: Optional[str] = Field(
         description="Language of the prompt.",
         example="en",
     )
 
-    @validator("language")
-    def validate_language(cls, language: str) -> str:
-        if language not in _LANGUAGE_TO_TEMPLATE:
-            raise ValueError(
-                "language must be one of: " + ", ".join(_LANGUAGE_TO_TEMPLATE.keys())
-            )
+    @validator("language", pre=True, always=True)
+    def validate_language(cls, language: Optional[str]) -> Optional[str]:
+        if language is not None and language not in _LANGUAGE_TO_TEMPLATE:
+            raise ValueError(f"Language {language} not supported.")
         return language
 
     def get_messages(
@@ -60,16 +58,27 @@ class ChatPromptTemplate(BaseModel):
         messages = []
 
         if self.system_message is not None:
-            system_template = Template(self.system_message)
             if self.language is not None:
-                system_message += f" You should ALWAYS write in {_LANGUAGE_TO_TEMPLATE[self.language]}."
+                self.system_message += f" You should ALWAYS write in {_LANGUAGE_TO_TEMPLATE[self.language]}."
             messages.append(
-                Message(role="system", content=system_template.substitute(**kwargs))
+                Message(role="system", content=self.system_message.format(**kwargs))
             )
 
-        user_template = Template(self.user_message)
         messages.append(
-            Message(role="user", content=user_template.substitute(**kwargs))
+            Message(role="user", content=self.user_message.format(**kwargs))
         )
         messages = [message.dict() for message in messages]
         return messages
+
+
+if __name__ == "__main__":
+    chat_prompt_template = ChatPromptTemplate(
+        system_message="You are a helpful assistant that translates {input_language} to {output_language}.",
+        user_message="{text}",
+        language="en",
+    )
+
+    messages = chat_prompt_template.get_messages(
+        input_language="English", output_language="French", text="Hello!"
+    )
+    print(messages)
