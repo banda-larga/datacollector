@@ -41,8 +41,7 @@ class DatasetLoader:
         dataset (Union[str, Path]): Path to the dataset or Hugging Face dataset name
         split (str, optional): Split to load. Defaults to "train".
             It can also be: "train+test", "train[10:20]", "train[:10%]", "train[:10%]+train[-80%:]"
-        streaming (bool, optional): Whether to load the dataset in streaming mode. Defaults to False.
-
+        **kwargs: Additional keyword arguments to pass to the Hugging Face dataset loader
     Returns:
         datasets.Dataset: Loaded dataset
     """
@@ -94,18 +93,28 @@ class DatasetLoader:
         args: CollectorArgs,
     ) -> Dataset:
 
-        language = None if args.task.function else args.task.language
+        if args.task.function is not None and args.language is not None:
+            raise ValueError(
+                "You provided a function and a language. Please remove the language from `CollectorArgs` and add it to the function."
+            )
+
+        language = args.language if args.language else None
+
+        print(f"Using language: {language}")
+        print(f"Args task prompt: {args.task.prompt}")
+        print(f"Args task system: {args.task.system}")
+        print(f"Args task inputs: {args.task.inputs}")
 
         template = ChatPromptTemplate(
-            prompt=args.task.prompt,
-            system=args.task.system,
+            user_message=args.task.prompt,
+            system_message=args.task.system,
             language=language,
         )
-
+        inputs = args.task.inputs
         return dataset.map(
-            lambda x: template.format(**x),
-            batched=True,
-            batch_size=args.batch_size,
+            lambda x: template.get_messages(x, inputs=inputs),
+            # batched=True,
+            # batch_size=args.batch_size,
             input_columns=args.task.inputs,
         )
 

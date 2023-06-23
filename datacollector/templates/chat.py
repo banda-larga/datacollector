@@ -31,7 +31,7 @@ class Message(BaseModel):
 
 
 class ChatPromptTemplate(BaseModel):
-    system_message: str = Field(
+    system_message: Optional[str] = Field(
         description="System message template.",
         example="You are a helpful assistant that translates {input_language} to {output_language}.",
     )
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     chat_prompt_template = ChatPromptTemplate(
         system_message="You are a helpful assistant that translates {input_language} to {output_language}.",
         user_message="{text}",
-        language="en",
+        language="it",
     )
 
     messages = chat_prompt_template.get_messages(
