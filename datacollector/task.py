@@ -1,8 +1,5 @@
-from typing import List, Optional
-
-from out_parser.parser import OutputParser
-from pydantic import BaseModel, Field, validator
-from functions.functions import Function
+from typing import List
+from pydantic import BaseModel, Field
 
 
 class Task(BaseModel):
@@ -21,25 +18,9 @@ class Task(BaseModel):
     outputs: List[str] = Field(
         ["output"], description="Task output columns.", example=["summary"]
     )
-    function: Function = Field(
+    function: BaseModel = Field(
         None,
         description="Task function.",
-        example={
-            "name": "get_tags",
-            "description": "A function that returns the tags associated with the given text.",
-            "tags_description": "List of tags.",
-            "labels": [
-                "python",
-                "javascript",
-                "java",
-                "c#",
-                "php",
-                "jquery",
-                "html",
-                "c++",
-                "css",
-            ],
-        },
     )
 
     class Config:

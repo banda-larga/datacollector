@@ -14,6 +14,7 @@ import os
 class CollectorArgs(BaseModel):
     task: Task = Field(None, description="Task arguments.", example=Task())
     dataset: str = Field(None, description="Dataset name.", example="xsum")
+    split: str = Field("train", description="Dataset split.", example="train")
     model: str = Field(None, description="Model name.", example="gpt-3.5-turbo-0613")
     language: str = Field(None, description="Language code.", example="it")
     max_items: int = Field(1000, description="Maximum number of items.", example=1000)
@@ -109,21 +110,22 @@ class DatasetLoader:
         )
 
 
-class Collector(BaseModel):
+class Collector:
     def __init__(
         self,
-        dataset: Union[str, Path],
-        output_columns: List[str] = ["output"],
-        args: CollectorArgs = CollectorArgs(),
+        args: CollectorArgs = None,
     ):
-        self.args = args
+        self.args = args or CollectorArgs()
 
         if self.args.task.function:
             self.function = self.args.task.load_functions()
         else:
             self.function = None
 
-        dataset = DatasetLoader.load(dataset)
+        dataset = DatasetLoader.load(
+            self.args.dataset,
+            split=self.args.split,
+        )
         self.dataset = DatasetLoader.prepare(dataset, self.args)
 
         input_columns = self.args.task.inputs

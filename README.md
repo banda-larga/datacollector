@@ -10,26 +10,47 @@ It's currently in the early stages of development, so it's a work in progress. I
 
 ### Collector
 
-The `Collector` is designed to collect data for a specific task, such as summarization. The following example demonstrates how to use the Collector for collecting cross-language summaries from the XSum dataset in Italian:
+The `Collector` is designed to collect data for a specific task, such as sentiment analysis.
+The following example demonstrates how to use the Collector for collecting sentiments from the XSum dataset:
 
 ```python
 
-from datacollector import Task, CollectorArgs, Collector
+from datacollector.functions import Classifier
+from datacollector import Collector, CollectorArgs, Task
 
-config = CollectorArgs(
-    task=Task.SUMMARIZATION,
+function = Classifier(
+    name="print_sentiment",
+    description="A function that prints the given sentiment.",
+    output="sentiment",
+    output_description="The sentiment.",
+    labels=[
+        "positive",
+        "negative",
+        "neutral",
+    ],
+)
+
+task = Task(
+    function = function,
+    inputs = ["text", "role"],
+    outputs = ["sentiment"],
+    system = "You are a {role}.",
+    prompt = "Classify the following text:\n{text}",
+    language = "en",
+)
+
+args = CollectorArgs(
+    task=task,
     dataset="xsum",
-    model="gpt-3.5-turbo-0613"
-    language="it",
+    model="gpt-3.5-turbo-0613",
     max_items=1000,
     batch_size=10,
-    num_proc=4,
     output_dir="output",
     save_every=100,
     push_to_hub=True,
 )
 
-collector = Collector(config)
+collector = Collector(args)
 collector.build()
 collector.push_to_hub()
 ```

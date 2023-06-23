@@ -38,23 +38,22 @@ class Classifier(BaseModel):
         ],
     )
 
-    @classmethod
-    def get_schema(cls, config: Classifier) -> List[Dict[str, Any]]:
+    def get_schema(self) -> List[Dict[str, Any]]:
         """Get schema of the function."""
         return [
             {
-                "name": config.name,
-                "description": config.description,
+                "name": self.name,
+                "description": self.description,
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        config.output: {
+                        self.output: {
                             "type": "string",
-                            "enum": config.labels,
-                            "description": config.output_description,
+                            "enum": self.labels,
+                            "description": self.output_description,
                         },
                     },
-                    "required": [config.output],
+                    "required": [self.output],
                 },
             }
         ]
